@@ -898,21 +898,6 @@
     });
   }
 
-      // 6. Category budget breakdown
-      renderDashboardCategories(data.categoryBreakdowns || data.categoryBreakdown || []);
-
-      // 7. Recent transactions
-      renderDashboardRecentTransactions(data.recentTransactions || []);
-
-      // 8. Budget alert card
-      renderDashboardAlertCard(data);
-
-    } catch (err) {
-      console.error('Failed to load dashboard:', err);
-      showToast('Could not refresh dashboard metrics', 'danger');
-    }
-  }
-
   function renderSpendingBars(overviewData) {
     const barsContainer = $('#bars');
     if (!barsContainer) return;
