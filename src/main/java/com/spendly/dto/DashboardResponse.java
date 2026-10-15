@@ -162,10 +162,28 @@ public class DashboardResponse {
         this.spendingOverview = spendingOverview;
     }
 
+    public List<java.util.Map<String, Object>> getSpendingOverviewMonthly() {
+        return spendingOverviewMonthly != null ? spendingOverviewMonthly : spendingOverview;
+    }
+
+    public void setSpendingOverviewMonthly(List<java.util.Map<String, Object>> spendingOverviewMonthly) {
+        this.spendingOverviewMonthly = spendingOverviewMonthly;
+    }
+
+    public List<java.util.Map<String, Object>> getSpendingOverviewWeekly() {
+        return spendingOverviewWeekly != null ? spendingOverviewWeekly : java.util.Collections.emptyList();
+    }
+
+    public void setSpendingOverviewWeekly(List<java.util.Map<String, Object>> spendingOverviewWeekly) {
+        this.spendingOverviewWeekly = spendingOverviewWeekly;
+    }
+
     private BigDecimal budgetLimit = new BigDecimal("40000.00");
     private BigDecimal netLent = BigDecimal.ZERO;
     private List<java.util.Map<String, Object>> owedToYouList;
     private BigDecimal netBorrowed = BigDecimal.ZERO;
     private List<java.util.Map<String, Object>> youOweList;
     private List<java.util.Map<String, Object>> spendingOverview;
+    private List<java.util.Map<String, Object>> spendingOverviewMonthly;
+    private List<java.util.Map<String, Object>> spendingOverviewWeekly;
 }

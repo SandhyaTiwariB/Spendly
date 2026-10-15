@@ -615,6 +615,71 @@ button {
   font-weight: 600;
 }
 
+.chart-badge {
+  background: var(--mint);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+}
+
+.chart-footer-info {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+
+.chart-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.gold-swatch {
+  background: linear-gradient(180deg, var(--gold2), var(--gold));
+}
+
+.green-swatch {
+  background: linear-gradient(180deg, #1b5b48, #0d3b2e);
+}
+
+.chart-hover-detail {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--ink);
+  background: #f4f7f5;
+  padding: 3px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 11px;
+}
+
+.chart-description-text {
+  margin: 7px 0 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 /* Category List */
 .category-list {
   display: grid;

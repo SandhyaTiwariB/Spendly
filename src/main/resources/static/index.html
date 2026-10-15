@@ -246,15 +246,18 @@
             <div class="panel-head">
               <div>
                 <h3>Spending overview</h3>
-                <p id="chartPeriodLabel">October 2026</p>
+                <p id="chartPeriodLabel">October 2026 • Daily breakdown</p>
               </div>
-              <select id="overviewViewToggle">
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-              </select>
+              <div class="overview-controls" style="display: flex; align-items: center; gap: 8px;">
+                <span id="chartActiveBadge" class="chart-badge">Monthly View</span>
+                <select id="overviewViewToggle" aria-label="Toggle view range">
+                  <option value="monthly" selected>Monthly</option>
+                  <option value="weekly">Weekly</option>
+                </select>
+              </div>
             </div>
             <div class="chart-wrap">
-              <div class="y-labels">
+              <div class="y-labels" id="overviewYLabels">
                 <span>₹8k</span>
                 <span>₹6k</span>
                 <span>₹4k</span>
@@ -262,7 +265,7 @@
                 <span>₹0</span>
               </div>
               <div class="bars" id="bars"></div>
-              <div class="x-labels">
+              <div class="x-labels" id="overviewXLabels">
                 <span>1</span>
                 <span>5</span>
                 <span>10</span>
@@ -271,6 +274,17 @@
                 <span>24</span>
                 <span>30</span>
               </div>
+            </div>
+            <!-- Chart Legend & Explanation -->
+            <div class="chart-footer-info" id="chartFooterInfo">
+              <div class="chart-legend-row">
+                <span class="chart-legend-item"><span class="legend-swatch gold-swatch"></span> Daily Expenses</span>
+                <span class="chart-legend-item"><span class="legend-swatch green-swatch"></span> Today / Peak Day</span>
+                <span id="chartHoverDetail" class="chart-hover-detail">Hover a bar for details</span>
+              </div>
+              <p id="chartDescriptionText" class="chart-description-text">
+                Showing daily expense trends across milestone dates in October 2026. Taller bars indicate spending peaks.
+              </p>
             </div>
           </article>
 

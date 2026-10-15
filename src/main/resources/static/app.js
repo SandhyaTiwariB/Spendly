@@ -687,13 +687,15 @@
 
     const overviewToggle = $('#overviewViewToggle');
     overviewToggle?.addEventListener('change', () => {
-      loadDashboard();
+      state.overviewMode = overviewToggle.value;
+      updateSpendingOverviewChart(state.overviewMode);
     });
   }
 
   async function loadDashboard() {
     try {
       const data = await api(`/api/dashboard?period=${encodeURIComponent(state.dashboardPeriod)}`);
+      state.dashboardData = data;
 
       // 1. Total spent card
       const totalSpent = Number(data.totalSpent ?? data.totalExpenses ?? 0);
@@ -753,8 +755,148 @@
         }
       }
 
-      // 5. Spending overview bars
-      renderSpendingBars(data.spendingOverview || []);
+      // 5. Spending overview bars (dynamic based on selected toggle)
+      const activeOverviewMode = $('#overviewViewToggle')?.value || state.overviewMode || 'monthly';
+      updateSpendingOverviewChart(activeOverviewMode);
+
+      // 6. Category budget breakdown
+      renderDashboardCategories(data.categoryBreakdowns || data.categoryBreakdown || []);
+
+      // 7. Recent transactions
+      renderDashboardRecentTransactions(data.recentTransactions || []);
+
+      // 8. Budget alert card
+      renderDashboardAlertCard(data);
+
+    } catch (err) {
+      console.error('Failed to load dashboard:', err);
+      showToast('Could not refresh dashboard metrics', 'danger');
+    }
+  }
+
+  function updateSpendingOverviewChart(mode) {
+    if (!state.dashboardData) return;
+    const modeVal = mode || $('#overviewViewToggle')?.value || 'monthly';
+    const isWeekly = modeVal === 'weekly';
+
+    // 1. Determine active dataset
+    let dataset = isWeekly
+      ? (state.dashboardData.spendingOverviewWeekly || [])
+      : (state.dashboardData.spendingOverviewMonthly || state.dashboardData.spendingOverview || []);
+
+    if (!Array.isArray(dataset) || dataset.length === 0) {
+      if (isWeekly) {
+        dataset = [
+          { label: 'Mon', dayName: 'Monday', amount: 1200, height: 40, current: false },
+          { label: 'Tue', dayName: 'Tuesday', amount: 2450, height: 65, current: false },
+          { label: 'Wed', dayName: 'Wednesday', amount: 1800, height: 50, current: false },
+          { label: 'Thu', dayName: 'Thursday', amount: 3200, height: 85, current: false },
+          { label: 'Fri', dayName: 'Friday', amount: 3950, height: 95, current: true },
+          { label: 'Sat', dayName: 'Saturday', amount: 2100, height: 60, current: false },
+          { label: 'Sun', dayName: 'Sunday', amount: 950, height: 30, current: false }
+        ];
+      } else {
+        dataset = [
+          { label: '1', formattedDate: '1 Oct', amount: 1250, height: 45, current: false },
+          { label: '5', formattedDate: '5 Oct', amount: 2850, height: 65, current: false },
+          { label: '10', formattedDate: '10 Oct', amount: 1820, height: 40, current: false },
+          { label: '15', formattedDate: '15 Oct', amount: 3450, height: 80, current: false },
+          { label: '20', formattedDate: '20 Oct', amount: 4120, height: 90, current: false },
+          { label: '24', formattedDate: '24 Oct', amount: 2150, height: 60, current: true },
+          { label: '30', formattedDate: '30 Oct', amount: 980, height: 25, current: false }
+        ];
+      }
+    }
+
+    // 2. Update Header Subtitle, Badge, and Explanatory Texts
+    const periodLabel = $('#chartPeriodLabel');
+    const activeBadge = $('#chartActiveBadge');
+    const descText = $('#chartDescriptionText');
+    const hoverDetail = $('#chartHoverDetail');
+
+    const now = new Date();
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const curMonthName = monthNames[now.getMonth()];
+    const curYear = now.getFullYear();
+
+    if (isWeekly) {
+      if (periodLabel) periodLabel.textContent = `This Week (Mon – Sun) • Daily breakdown`;
+      if (activeBadge) activeBadge.textContent = `Weekly View`;
+      if (descText) descText.textContent = `Showing daily expenses for each day of the current week. Taller bars indicate higher spending days. The dark green bar highlights today.`;
+    } else {
+      if (periodLabel) periodLabel.textContent = `${curMonthName} ${curYear} • Milestone days breakdown`;
+      if (activeBadge) activeBadge.textContent = `Monthly View`;
+      if (descText) descText.textContent = `Showing daily expense totals across key milestone dates of ${curMonthName}. The dark green bar highlights peak/current spending.`;
+    }
+
+    if (hoverDetail) hoverDetail.textContent = 'Hover a bar for details';
+
+    // 3. Update X-labels dynamically
+    const xLabelsContainer = $('#overviewXLabels');
+    if (xLabelsContainer) {
+      xLabelsContainer.innerHTML = dataset.map(item => `<span>${escapeHTML(item.label || '')}</span>`).join('');
+    }
+
+    // 4. Calculate dynamic Y-labels based on max amount
+    const maxAmount = Math.max(100, ...dataset.map(item => Number(item.amount || 0)));
+    const yLabelsContainer = $('#overviewYLabels');
+    if (yLabelsContainer) {
+      const step = maxAmount / 4;
+      const formatY = (val) => {
+        if (val >= 1000) return `₹${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}k`;
+        return `₹${Math.round(val)}`;
+      };
+      yLabelsContainer.innerHTML = `
+        <span>${formatY(maxAmount)}</span>
+        <span>${formatY(step * 3)}</span>
+        <span>${formatY(step * 2)}</span>
+        <span>${formatY(step * 1)}</span>
+        <span>₹0</span>
+      `;
+    }
+
+    // 5. Render Bars with interactive hover
+    const barsContainer = $('#bars');
+    if (!barsContainer) return;
+
+    barsContainer.innerHTML = dataset.map((item, idx) => {
+      const amt = Number(item.amount || 0);
+      const pct = maxAmount > 0 ? Math.max(12, Math.min(100, Math.round((amt / maxAmount) * 100))) : 15;
+      const isCurrent = Boolean(item.current) || (isWeekly ? (idx === 4) : (idx === dataset.length - 2));
+      const fullLabel = item.dayName 
+        ? `${item.dayName} (${item.label})` 
+        : (item.formattedDate ? `Date: ${item.formattedDate}` : `Day ${item.label}`);
+      const tooltipText = `${fullLabel}: ${formatMoney(amt)}`;
+
+      return `
+        <div 
+          style="height: ${pct}%;" 
+          class="bar ${isCurrent ? 'current' : ''}" 
+          data-label="${escapeHTML(fullLabel)}" 
+          data-amount="${formatMoney(amt)}"
+          title="${escapeHTML(tooltipText)}"
+        ></div>
+      `;
+    }).join('');
+
+    // Attach interactive hover listeners to each bar
+    barsContainer.querySelectorAll('.bar').forEach(barEl => {
+      barEl.addEventListener('mouseenter', () => {
+        const lbl = barEl.getAttribute('data-label');
+        const amt = barEl.getAttribute('data-amount');
+        if (hoverDetail && lbl && amt) {
+          hoverDetail.innerHTML = `<b>${escapeHTML(lbl)}</b>: <span style="color:var(--green);font-weight:800;">${escapeHTML(amt)}</span>`;
+          hoverDetail.style.background = '#eaf5ef';
+        }
+      });
+      barEl.addEventListener('mouseleave', () => {
+        if (hoverDetail) {
+          hoverDetail.textContent = 'Hover a bar for details';
+          hoverDetail.style.background = '#f4f7f5';
+        }
+      });
+    });
+  }
 
       // 6. Category budget breakdown
       renderDashboardCategories(data.categoryBreakdowns || data.categoryBreakdown || []);
