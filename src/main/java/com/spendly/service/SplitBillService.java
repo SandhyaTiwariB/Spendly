@@ -73,10 +73,18 @@ public class SplitBillService {
         );
 
         if (request.getParticipants() != null && !request.getParticipants().isEmpty()) {
+            int count = request.getParticipants().size();
+            BigDecimal equalShare = (request.getTotalAmount() != null && count > 0)
+                    ? request.getTotalAmount().divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+
             for (SplitBillRequest.ParticipantItem item : request.getParticipants()) {
+                BigDecimal share = (item.getShareAmount() != null && item.getShareAmount().compareTo(BigDecimal.ZERO) > 0)
+                        ? item.getShareAmount()
+                        : equalShare;
                 bill.addParticipant(new SplitBillParticipant(
-                        item.getName().trim(),
-                        item.getShareAmount() != null ? item.getShareAmount() : BigDecimal.ZERO,
+                        item.getName() != null ? item.getName().trim() : "Participant",
+                        share,
                         item.isSettled()
                 ));
             }

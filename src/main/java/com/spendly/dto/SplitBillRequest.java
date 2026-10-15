@@ -29,6 +29,13 @@ public class SplitBillRequest {
 
         public ParticipantItem() {}
 
+        @com.fasterxml.jackson.annotation.JsonCreator(mode = com.fasterxml.jackson.annotation.JsonCreator.Mode.DELEGATING)
+        public ParticipantItem(String name) {
+            this.name = name;
+            this.shareAmount = null;
+            this.isSettled = false;
+        }
+
         public ParticipantItem(String name, BigDecimal shareAmount, boolean isSettled) {
             this.name = name;
             this.shareAmount = shareAmount;

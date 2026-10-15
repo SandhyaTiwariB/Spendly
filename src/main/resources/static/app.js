@@ -1910,11 +1910,19 @@
       const rawParticipants = $('#splitParticipantsInput').value.trim();
       const notes = $('#splitNotes').value.trim();
 
-      const participants = rawParticipants.split(',').map(s => s.trim()).filter(Boolean);
-      if (participants.length === 0) {
+      const participantNames = rawParticipants.split(',').map(s => s.trim()).filter(Boolean);
+      if (participantNames.length === 0) {
         showToast('Please specify at least one participant', 'danger');
         return;
       }
+
+      const count = participantNames.length;
+      const share = count > 0 ? Number((totalAmount / count).toFixed(2)) : 0;
+      const participants = participantNames.map(name => ({
+        name: name,
+        shareAmount: share,
+        isSettled: false
+      }));
 
       try {
         await api('/api/split-bills', {
