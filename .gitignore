@@ -2,6 +2,9 @@
 target/
 *.class
 
+# Embedded database storage
+data/
+
 # IDE configurations
 .vscode/
 .idea/
@@ -21,3 +24,5 @@ Thumbs.db
 
 # Keep maven wrapper and bundled distribution
 !maven/**
+
+

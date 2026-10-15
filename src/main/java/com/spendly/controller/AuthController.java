@@ -40,12 +40,29 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMe(@RequestParam(value = "email", defaultValue = "vrinda@spendly.io") String email) {
-        User user = authService.getProfile(email);
+    public ResponseEntity<?> getMe(@RequestParam(value = "email", defaultValue = "vrinda@spendly.io") String email,
+                                   @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        User user = null;
+        if (authHeader != null && !authHeader.trim().isEmpty()) {
+            user = authService.getUserByToken(authHeader);
+        }
+        if (user == null) {
+            user = authService.getProfile(email);
+        }
         if (user == null) {
             return ResponseEntity.notFound().build();
         }
+        Map<String, Object> userData = Map.of(
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "fullName", user.getFullName(),
+                "role", user.getRole(),
+                "currency", user.getCurrency(),
+                "monthlyBudget", user.getMonthlyBudget()
+        );
         return ResponseEntity.ok(Map.of(
+                "authenticated", true,
+                "user", userData,
                 "id", user.getId(),
                 "email", user.getEmail(),
                 "fullName", user.getFullName(),

@@ -140,6 +140,8 @@
       headers.set('Content-Type', 'application/json');
     }
 
+    headers.set('bypass-tunnel-reminder', 'true');
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers
@@ -401,9 +403,10 @@
     state.token = savedToken;
     try {
       const res = await api('/api/auth/me');
-      if (res.authenticated && res.user) {
-        state.currentUser = res.user;
-        localStorage.setItem('spendly_user', JSON.stringify(res.user));
+      const user = res.user || (res.id ? res : null);
+      if (user) {
+        state.currentUser = user;
+        localStorage.setItem('spendly_user', JSON.stringify(user));
         completeLogin();
       } else {
         handleUnauthorized();
