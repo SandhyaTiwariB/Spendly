@@ -721,10 +721,22 @@
               <div style="padding: 24px; text-align: center; color: var(--muted);">Loading audit events…</div>
             </div>
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 12px; color: var(--muted);">
-            <span id="logPageSummary">Showing events</span>
-            <div style="display: flex; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 12px; color: var(--muted); flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span id="logPageSummary">Showing events</span>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin: 0;">
+                Show:
+                <select id="logPageSizeSelect" style="padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; background: #fff; cursor: pointer;">
+                  <option value="5">5 / page</option>
+                  <option value="10" selected>10 / page</option>
+                  <option value="25">25 / page</option>
+                  <option value="50">50 / page</option>
+                </select>
+              </label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;" id="activityLogPaginationControls">
               <button class="secondary" id="prevLogPageBtn" style="padding: 6px 12px;">← Previous</button>
+              <div id="logPageNumbers" style="display: flex; gap: 4px;"></div>
               <button class="secondary" id="nextLogPageBtn" style="padding: 6px 12px;">Next →</button>
             </div>
           </div>

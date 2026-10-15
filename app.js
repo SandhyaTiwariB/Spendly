@@ -1764,6 +1764,12 @@
     const exportBtn = $('#exportAuditCsvBtn');
     const prevBtn = $('#prevLogPageBtn');
     const nextBtn = $('#nextLogPageBtn');
+    const pageSizeSelect = $('#logPageSizeSelect');
+
+    pageSizeSelect?.addEventListener('change', () => {
+      state.activityLogPage = 0;
+      loadActivityLog();
+    });
 
     [childSelect, typeSelect, statusSelect].forEach(el => {
       el?.addEventListener('change', () => {
@@ -1786,6 +1792,7 @@
       if (typeSelect) typeSelect.value = '';
       if (statusSelect) statusSelect.value = '';
       if (searchInput) searchInput.value = '';
+      if (pageSizeSelect) pageSizeSelect.value = '10';
       state.activityLogPage = 0;
       loadActivityLog();
     });
@@ -1799,6 +1806,8 @@
       if (state.activityLogPage > 0) {
         state.activityLogPage--;
         loadActivityLog();
+      } else {
+        showToast('You are already on the first page', 'info', 2000);
       }
     });
 
@@ -1806,6 +1815,8 @@
       if (state.activityLogPage < state.activityLogTotalPages - 1) {
         state.activityLogPage++;
         loadActivityLog();
+      } else {
+        showToast('You are already on the last page', 'info', 2000);
       }
     });
   }
@@ -1815,16 +1826,18 @@
     const summaryEl = $('#logPageSummary');
     const prevBtn = $('#prevLogPageBtn');
     const nextBtn = $('#nextLogPageBtn');
+    const numbersContainer = $('#logPageNumbers');
     if (!rowsContainer) return;
 
     const child = $('#logChildSelect')?.value || '';
     const type = $('#logTypeSelect')?.value || '';
     const status = $('#logStatusSelect')?.value || '';
     const search = $('#logSearchInput')?.value.trim() || '';
+    const pageSize = Number($('#logPageSizeSelect')?.value || 10);
 
     try {
-      let url = `/api/parent-control/activity-log?page=${state.activityLogPage}&size=15&`;
-      if (child) url += `childName=${encodeURIComponent(child)}&`;
+      let url = `/api/parent-control/activity-log?page=${state.activityLogPage}&size=${pageSize}&`;
+      if (child) url += `childAccount=${encodeURIComponent(child)}&`;
       if (type) url += `activityType=${encodeURIComponent(type)}&`;
       if (status) url += `status=${encodeURIComponent(status)}&`;
       if (search) url += `search=${encodeURIComponent(search)}&`;
@@ -1832,12 +1845,42 @@
       const data = await api(url);
       const logs = Array.isArray(data) ? data : (data.content || []);
       state.activityLogs = logs;
-      state.activityLogTotalPages = data.totalPages || 1;
+      state.activityLogTotalPages = Math.max(1, data.totalPages || 1);
 
-      if (prevBtn) prevBtn.disabled = state.activityLogPage <= 0;
-      if (nextBtn) nextBtn.disabled = state.activityLogPage >= state.activityLogTotalPages - 1;
+      const currentPage = state.activityLogPage;
+      const totalPages = state.activityLogTotalPages;
+      const totalEvents = data.totalElements ?? logs.length;
+
+      if (prevBtn) {
+        prevBtn.disabled = currentPage <= 0;
+        prevBtn.title = currentPage <= 0 ? 'First page reached' : `Go to page ${currentPage}`;
+      }
+      if (nextBtn) {
+        nextBtn.disabled = currentPage >= totalPages - 1;
+        nextBtn.title = currentPage >= totalPages - 1 ? 'Last page reached' : `Go to page ${currentPage + 2}`;
+      }
+
       if (summaryEl) {
-        summaryEl.textContent = `Page ${state.activityLogPage + 1} of ${state.activityLogTotalPages} (${data.totalElements || logs.length} events)`;
+        summaryEl.textContent = `Page ${currentPage + 1} of ${totalPages} (${totalEvents} event${totalEvents === 1 ? '' : 's'})`;
+      }
+
+      if (numbersContainer) {
+        numbersContainer.innerHTML = '';
+        if (totalPages > 1) {
+          for (let p = 0; p < totalPages; p++) {
+            const isCur = p === currentPage;
+            const pageBtn = document.createElement('button');
+            pageBtn.type = 'button';
+            pageBtn.className = `page-num-btn ${isCur ? 'active' : ''}`;
+            pageBtn.textContent = p + 1;
+            pageBtn.title = `Page ${p + 1}`;
+            pageBtn.addEventListener('click', () => {
+              state.activityLogPage = p;
+              loadActivityLog();
+            });
+            numbersContainer.appendChild(pageBtn);
+          }
+        }
       }
 
       if (logs.length === 0) {
