@@ -437,6 +437,36 @@ button[disabled],
   color: #fff;
 }
 
+#prevLogPageBtn,
+#nextLogPageBtn {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  background: #fff !important;
+  color: var(--dark) !important;
+  border: 1px solid var(--line) !important;
+  padding: 6px 14px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+#prevLogPageBtn:hover,
+#nextLogPageBtn:hover {
+  background: var(--green) !important;
+  color: #fff !important;
+  border-color: var(--green) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(13, 59, 46, 0.15) !important;
+}
+
+#prevLogPageBtn:active,
+#nextLogPageBtn:active {
+  transform: translateY(0) !important;
+}
+
 /* Stats Cards Grid */
 .stats-grid {
   display: grid;

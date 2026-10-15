@@ -1803,21 +1803,37 @@
     });
 
     prevBtn?.addEventListener('click', () => {
+      const totalPages = Math.max(1, state.activityLogTotalPages || 1);
+      if (totalPages <= 1) {
+        state.activityLogPage = 0;
+        loadActivityLog();
+        showToast('Refreshing Activity Log (Page 1 of 1)…', 'info', 1500);
+        return;
+      }
       if (state.activityLogPage > 0) {
         state.activityLogPage--;
-        loadActivityLog();
       } else {
-        showToast('You are already on the first page', 'info', 2000);
+        state.activityLogPage = totalPages - 1;
+        showToast(`Jumped to Page ${totalPages} of ${totalPages}`, 'info', 1500);
       }
+      loadActivityLog();
     });
 
     nextBtn?.addEventListener('click', () => {
-      if (state.activityLogPage < state.activityLogTotalPages - 1) {
-        state.activityLogPage++;
+      const totalPages = Math.max(1, state.activityLogTotalPages || 1);
+      if (totalPages <= 1) {
+        state.activityLogPage = 0;
         loadActivityLog();
-      } else {
-        showToast('You are already on the last page', 'info', 2000);
+        showToast('Refreshing Activity Log (Page 1 of 1)…', 'info', 1500);
+        return;
       }
+      if (state.activityLogPage < totalPages - 1) {
+        state.activityLogPage++;
+      } else {
+        state.activityLogPage = 0;
+        showToast(`Wrapped around to Page 1 of ${totalPages}`, 'info', 1500);
+      }
+      loadActivityLog();
     });
   }
 
@@ -1833,7 +1849,7 @@
     const type = $('#logTypeSelect')?.value || '';
     const status = $('#logStatusSelect')?.value || '';
     const search = $('#logSearchInput')?.value.trim() || '';
-    const pageSize = Number($('#logPageSizeSelect')?.value || 10);
+    const pageSize = Number($('#logPageSizeSelect')?.value || 5);
 
     try {
       let url = `/api/parent-control/activity-log?page=${state.activityLogPage}&size=${pageSize}&`;
@@ -1851,13 +1867,16 @@
       const totalPages = state.activityLogTotalPages;
       const totalEvents = data.totalElements ?? logs.length;
 
+      // Keep buttons permanently enabled and interactive
       if (prevBtn) {
-        prevBtn.disabled = currentPage <= 0;
-        prevBtn.title = currentPage <= 0 ? 'First page reached' : `Go to page ${currentPage}`;
+        prevBtn.disabled = false;
+        prevBtn.removeAttribute('disabled');
+        prevBtn.title = 'Previous page';
       }
       if (nextBtn) {
-        nextBtn.disabled = currentPage >= totalPages - 1;
-        nextBtn.title = currentPage >= totalPages - 1 ? 'Last page reached' : `Go to page ${currentPage + 2}`;
+        nextBtn.disabled = false;
+        nextBtn.removeAttribute('disabled');
+        nextBtn.title = 'Next page';
       }
 
       if (summaryEl) {
@@ -1866,20 +1885,18 @@
 
       if (numbersContainer) {
         numbersContainer.innerHTML = '';
-        if (totalPages > 1) {
-          for (let p = 0; p < totalPages; p++) {
-            const isCur = p === currentPage;
-            const pageBtn = document.createElement('button');
-            pageBtn.type = 'button';
-            pageBtn.className = `page-num-btn ${isCur ? 'active' : ''}`;
-            pageBtn.textContent = p + 1;
-            pageBtn.title = `Page ${p + 1}`;
-            pageBtn.addEventListener('click', () => {
-              state.activityLogPage = p;
-              loadActivityLog();
-            });
-            numbersContainer.appendChild(pageBtn);
-          }
+        for (let p = 0; p < totalPages; p++) {
+          const isCur = p === currentPage;
+          const pageBtn = document.createElement('button');
+          pageBtn.type = 'button';
+          pageBtn.className = `page-num-btn ${isCur ? 'active' : ''}`;
+          pageBtn.textContent = p + 1;
+          pageBtn.title = `Go to Page ${p + 1}`;
+          pageBtn.addEventListener('click', () => {
+            state.activityLogPage = p;
+            loadActivityLog();
+          });
+          numbersContainer.appendChild(pageBtn);
         }
       }
 
