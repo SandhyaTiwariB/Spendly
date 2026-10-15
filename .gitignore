@@ -1,0 +1,23 @@
+# Maven target directory
+target/
+*.class
+
+# IDE configurations
+.vscode/
+.idea/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Keep maven wrapper and bundled distribution
+!maven/**
