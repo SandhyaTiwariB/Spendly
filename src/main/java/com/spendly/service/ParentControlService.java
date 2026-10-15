@@ -235,7 +235,7 @@ public class ParentControlService {
                 .orElse(true);
     }
 
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void recordBlockedTransaction(String childAccount, String description, BigDecimal amount, String category, String reason) {
         String child = childAccount != null ? childAccount : DEFAULT_CHILD;
 
@@ -285,5 +285,50 @@ public class ParentControlService {
                 category,
                 false
         ));
+    }
+
+    @Transactional
+    public void registerNewCategoryRule(String category) {
+        if (category == null || category.trim().isEmpty()) return;
+        String cleanCat = category.trim();
+        if (ruleRepository.findByChildAccountAndCategoryIgnoreCase(DEFAULT_CHILD, cleanCat).isEmpty()) {
+            ruleRepository.save(new ParentRule(DEFAULT_CHILD, cleanCat, true, new BigDecimal("5000.00")));
+            logRepository.save(new ParentActivityLog(
+                    DEFAULT_CHILD,
+                    "CATEGORY_PERMISSION_CHANGED",
+                    cleanCat,
+                    new BigDecimal("5000.00"),
+                    "New category '" + cleanCat + "' created and configured under Parent Control",
+                    null,
+                    "Enabled",
+                    "COMPLETED",
+                    "Parent created category and assigned default limit of ₹5,000.00",
+                    "Spendly Application",
+                    "Parent (Vrinda)"
+            ));
+        }
+    }
+
+    @Transactional
+    public void removeCategoryRule(String category) {
+        if (category == null || category.trim().isEmpty()) return;
+        String cleanCat = category.trim();
+        ruleRepository.findByChildAccountAndCategoryIgnoreCase(DEFAULT_CHILD, cleanCat)
+                .ifPresent(rule -> {
+                    ruleRepository.delete(rule);
+                    logRepository.save(new ParentActivityLog(
+                            DEFAULT_CHILD,
+                            "CATEGORY_PERMISSION_CHANGED",
+                            cleanCat,
+                            null,
+                            "Category '" + cleanCat + "' was deleted and removed from Parent Control rules",
+                            "Active",
+                            "Removed",
+                            "COMPLETED",
+                            "Parent deleted custom category",
+                            "Spendly Application",
+                            "Parent (Vrinda)"
+                    ));
+                });
     }
 }

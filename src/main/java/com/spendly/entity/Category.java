@@ -4,9 +4,7 @@ import jakarta.persistence.*;
 import java.util.Objects;
 
 @Entity
-@Table(name = "categories", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_category_name", columnNames = {"name"})
-})
+@Table(name = "categories")
 public class Category {
 
     @Id
@@ -26,14 +24,31 @@ public class Category {
     @Column(length = 50)
     private String icon;
 
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Column(name = "is_custom")
+    private Boolean isCustom = false;
+
     public Category() {
     }
 
     public Category(String name, CategoryType type, String color, String icon) {
         this.name = name;
-        this.type = type;
+        this.type = type != null ? type : CategoryType.EXPENSE;
         this.color = color;
         this.icon = icon;
+        this.userId = null;
+        this.isCustom = false;
+    }
+
+    public Category(String name, CategoryType type, String color, String icon, Long userId, Boolean isCustom) {
+        this.name = name;
+        this.type = type != null ? type : CategoryType.EXPENSE;
+        this.color = color;
+        this.icon = icon;
+        this.userId = userId;
+        this.isCustom = isCustom != null ? isCustom : false;
     }
 
     public Long getId() {
@@ -76,16 +91,40 @@ public class Category {
         this.icon = icon;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public boolean isCustom() {
+        return isCustom != null && isCustom;
+    }
+
+    public Boolean getIsCustom() {
+        return isCustom != null ? isCustom : false;
+    }
+
+    public void setCustom(boolean custom) {
+        this.isCustom = custom;
+    }
+
+    public void setIsCustom(Boolean isCustom) {
+        this.isCustom = isCustom != null ? isCustom : false;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Category category = (Category) o;
-        return Objects.equals(name, category.name);
+        return Objects.equals(id, category.id) && Objects.equals(name, category.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(id, name);
     }
 }

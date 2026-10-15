@@ -14,9 +14,17 @@ import java.util.*;
 public class CategorizationService {
 
     private final CategoryRepository categoryRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public CategorizationService(CategoryRepository categoryRepository,
+                                 @org.springframework.beans.factory.annotation.Autowired(required = false) org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
+        this.categoryRepository = categoryRepository;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     public CategorizationService(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+        this(categoryRepository, null);
     }
 
     public static class CategoryResult {
@@ -37,6 +45,14 @@ public class CategorizationService {
 
     @PostConstruct
     public void initDefaultCategories() {
+        if (jdbcTemplate != null) {
+            try {
+                jdbcTemplate.execute("ALTER TABLE categories ADD COLUMN IF NOT EXISTS is_custom BOOLEAN DEFAULT FALSE");
+                jdbcTemplate.execute("ALTER TABLE categories ADD COLUMN IF NOT EXISTS user_id BIGINT");
+                jdbcTemplate.execute("UPDATE categories SET is_custom = FALSE WHERE is_custom IS NULL");
+            } catch (Exception ignored) {
+            }
+        }
         if (categoryRepository.count() == 0) {
             List<Category> defaults = List.of(
                     new Category("Income", CategoryType.INCOME, "#16865c", "↙"),

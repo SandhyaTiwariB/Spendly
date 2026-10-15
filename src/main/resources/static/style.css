@@ -1563,3 +1563,69 @@ button {
     justify-self: end;
   }
 }
+
+/* Custom Category Pickers */
+.icon-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 125px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.icon-choice {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.icon-choice:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.icon-choice.active {
+  border-color: var(--green);
+  background: var(--mint);
+  box-shadow: 0 0 0 2px var(--green);
+}
+
+.color-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px;
+}
+
+.color-choice {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  outline: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.color-choice:hover {
+  transform: scale(1.18);
+}
+
+.color-choice.active {
+  outline: 2px solid var(--green);
+  transform: scale(1.12);
+}
+

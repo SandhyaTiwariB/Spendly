@@ -16,6 +16,8 @@ public interface ParentActivityLogRepository extends JpaRepository<ParentActivit
 
     List<ParentActivityLog> findAllByOrderByTimestampDesc();
 
+    List<ParentActivityLog> findByChildAccountOrderByTimestampDesc(String childAccount);
+
     @Query("SELECT l FROM ParentActivityLog l WHERE " +
            "(:childAccount IS NULL OR LOWER(l.childAccount) LIKE LOWER(CONCAT('%', :childAccount, '%'))) AND " +
            "(:activityType IS NULL OR l.activityType = :activityType) AND " +

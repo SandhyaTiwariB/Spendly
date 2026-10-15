@@ -28,6 +28,8 @@
     activityLogPage: 0,
     activityLogTotalPages: 1,
     alerts: [],
+    categories: [],
+    categorySourceModal: null,
     activeModal: null
   };
 
@@ -367,6 +369,7 @@
     if (appShell) appShell.style.display = 'flex';
 
     updateUserProfileUI();
+    loadCategories();
     loadSectionData(state.activeSection);
     loadAlerts();
   }
@@ -600,12 +603,15 @@
   function loadSectionData(sectionId) {
     switch (sectionId) {
       case 'dashboard':
+        loadCategories();
         loadDashboard();
         break;
       case 'expenses':
+        loadCategories();
         loadExpenses();
         break;
       case 'budgets':
+        loadCategories();
         loadBudgets();
         break;
       case 'splits':
@@ -1520,19 +1526,73 @@
       }
 
       // Update rule switches
-      if (Array.isArray(summary.rules)) {
-        summary.rules.forEach(rule => {
-          const cat = rule.categoryName;
-          let el = null;
-          if (cat === 'Shopping') el = $('#ruleShopping');
-          else if (cat === 'Entertainment') el = $('#ruleEntertainment');
-          else if (cat === 'Food & Dining') el = $('#ruleFood');
-          else if (cat === 'Gaming / Apps') el = $('#ruleGaming');
+      const allRules = Array.isArray(summary.categoryRules) ? summary.categoryRules : (Array.isArray(summary.rules) ? summary.rules : []);
+      const standardCats = ['Shopping', 'Entertainment', 'Food & Dining', 'Gaming / Apps'];
 
-          if (el) {
-            el.checked = Boolean(rule.isAllowed);
-          }
+      allRules.forEach(rule => {
+        const cat = rule.category || rule.categoryName;
+        const isAllowed = rule.enabled !== undefined ? Boolean(rule.enabled) : Boolean(rule.isAllowed);
+        let el = null;
+        if (cat === 'Shopping') el = $('#ruleShopping');
+        else if (cat === 'Entertainment') el = $('#ruleEntertainment');
+        else if (cat === 'Food & Dining') el = $('#ruleFood');
+        else if (cat === 'Gaming / Apps') el = $('#ruleGaming');
+
+        if (el) {
+          el.checked = isAllowed;
+        }
+      });
+
+      // Render custom category rules
+      const customContainer = $('#parentCustomRulesContainer');
+      if (customContainer) {
+        const customRules = allRules.filter(r => {
+          const cName = r.category || r.categoryName || '';
+          return !standardCats.some(s => s.toLowerCase() === cName.toLowerCase());
         });
+
+        if (customRules.length === 0) {
+          customContainer.innerHTML = '';
+        } else {
+          customContainer.innerHTML = customRules.map(rule => {
+            const cat = rule.category || rule.categoryName;
+            const isAllowed = rule.enabled !== undefined ? Boolean(rule.enabled) : Boolean(rule.isAllowed);
+            const limit = rule.categoryLimit ? ` (Limit: ${formatMoney(rule.categoryLimit)})` : '';
+            return `
+              <div class="control-row" style="margin-top: 10px;">
+                <div>
+                  <span>${escapeHTML(cat)}</span>
+                  <small style="display: block; font-size: 11px; color: ${isAllowed ? 'var(--green)' : 'var(--danger)'}; font-weight: 500;">
+                    ${isAllowed ? 'Custom category: Allowed' + limit : 'Restricted: in-app purchases blocked'}
+                  </small>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" ${isAllowed ? 'checked' : ''} data-custom-parent-rule="${escapeHTML(cat)}" />
+                  <i></i>
+                </label>
+              </div>
+            `;
+          }).join('');
+
+          customContainer.querySelectorAll('input[data-custom-parent-rule]').forEach(cb => {
+            cb.addEventListener('change', async () => {
+              const catName = cb.dataset.customParentRule;
+              const newAllowed = cb.checked;
+              try {
+                await api(`/api/parent-control/rules/${encodeURIComponent(catName)}`, {
+                  method: 'PUT',
+                  body: JSON.stringify({ isAllowed: newAllowed, enabled: newAllowed })
+                });
+                showToast(`Permission for ${catName} switched to ${newAllowed ? 'Allowed' : 'Blocked'}`, newAllowed ? 'success' : 'warning');
+                loadParentControl();
+                loadAlerts();
+              } catch (err) {
+                cb.checked = !newAllowed;
+                showToast(err.message || 'Failed to update rule', 'danger');
+              }
+            });
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load parent control summary:', err);
@@ -1956,6 +2016,229 @@
     }
   }
 
+  // --- CUSTOM CATEGORIES MODULE ---
+  const CURATED_ICONS = ['🏷️', '☕', '🛒', '🛍', '🚗', '🎬', '💊', '📚', '⚡', '📈', '🏠', '✂', '🐾', '✈️', '🎮', '💻', '🎁', '🏋️', '🍽️', '🎨', '🛠️', '👶', '🍕', '🚴', '🩺', '🎟️', '💈', '💼', '📦', '🛡️', '🍿', '🎧'];
+  const CURATED_COLORS = ['#16865c', '#1abc9c', '#27ae60', '#2980b9', '#3498db', '#9b59b6', '#e67e22', '#e74c3c', '#f39c12', '#c0392b', '#8e44ad', '#d35400', '#7f8c8d', '#2c3e50', '#145a43', '#c8a24a'];
+
+  async function loadCategories() {
+    try {
+      const data = await api('/api/categories');
+      state.categories = Array.isArray(data) ? data : [];
+
+      // 1. Populate Expense modal select (#category)
+      const expenseCatSelect = $('#category');
+      if (expenseCatSelect) {
+        const currentVal = expenseCatSelect.value;
+        expenseCatSelect.innerHTML = state.categories
+          .filter(c => (c.type || '').toUpperCase() !== 'TRANSFER')
+          .map(c => `<option value="${escapeHTML(c.name)}">${c.icon ? c.icon + ' ' : ''}${escapeHTML(c.name)}</option>`)
+          .join('');
+        if (currentVal && state.categories.some(c => c.name.toLowerCase() === currentVal.toLowerCase())) {
+          expenseCatSelect.value = currentVal;
+        }
+      }
+
+      // 2. Populate Budget modal select (#modalBudgetCategory)
+      const budgetCatSelect = $('#modalBudgetCategory');
+      if (budgetCatSelect) {
+        const currentVal = budgetCatSelect.value;
+        budgetCatSelect.innerHTML = state.categories
+          .filter(c => (c.type || '').toUpperCase() === 'EXPENSE')
+          .map(c => `<option value="${escapeHTML(c.name)}">${c.icon ? c.icon + ' ' : ''}${escapeHTML(c.name)}</option>`)
+          .join('');
+        if (currentVal && state.categories.some(c => c.name.toLowerCase() === currentVal.toLowerCase())) {
+          budgetCatSelect.value = currentVal;
+        }
+      }
+
+      // 3. Populate Expenses filter select (#expenseCategoryFilter)
+      const filterCatSelect = $('#expenseCategoryFilter');
+      if (filterCatSelect) {
+        const currentVal = filterCatSelect.value;
+        filterCatSelect.innerHTML = `<option value="">All categories</option>` +
+          state.categories.map(c => `<option value="${escapeHTML(c.name)}">${c.icon ? c.icon + ' ' : ''}${escapeHTML(c.name)}</option>`).join('');
+        if (currentVal) {
+          filterCatSelect.value = currentVal;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load categories:', err);
+    }
+  }
+
+  function initCustomCategories() {
+    // 1. Render icon grid
+    const iconGrid = $('#categoryIconGrid');
+    const iconInput = $('#categoryIconInput');
+    if (iconGrid && iconInput) {
+      iconGrid.innerHTML = CURATED_ICONS.map((icon, idx) => `
+        <span class="icon-choice ${idx === 0 ? 'active' : ''}" data-icon="${icon}">${icon}</span>
+      `).join('');
+
+      iconGrid.addEventListener('click', (e) => {
+        const choice = e.target.closest('.icon-choice');
+        if (!choice) return;
+        iconGrid.querySelectorAll('.icon-choice').forEach(el => el.classList.remove('active'));
+        choice.classList.add('active');
+        iconInput.value = choice.dataset.icon;
+      });
+    }
+
+    // 2. Render color grid
+    const colorGrid = $('#categoryColorGrid');
+    const colorInput = $('#categoryColorInput');
+    if (colorGrid && colorInput) {
+      colorGrid.innerHTML = CURATED_COLORS.map((color, idx) => `
+        <span class="color-choice ${idx === 0 ? 'active' : ''}" data-color="${color}" style="background-color: ${color};"></span>
+      `).join('');
+
+      colorGrid.addEventListener('click', (e) => {
+        const choice = e.target.closest('.color-choice');
+        if (!choice) return;
+        colorGrid.querySelectorAll('.color-choice').forEach(el => el.classList.remove('active'));
+        choice.classList.add('active');
+        colorInput.value = choice.dataset.color;
+      });
+    }
+
+    // 3. Track modal origin buttons
+    $('#openCategoryModalFromExpensesBtn')?.addEventListener('click', () => {
+      state.categorySourceModal = 'expensesPage';
+      clearCategoryModalAlert();
+      openModal('categoryModal');
+    });
+
+    $('#openCategoryModalFromBudgetsBtn')?.addEventListener('click', () => {
+      state.categorySourceModal = 'budgetsPage';
+      clearCategoryModalAlert();
+      openModal('categoryModal');
+    });
+
+    $('#openCategoryFromExpenseModalBtn')?.addEventListener('click', () => {
+      state.categorySourceModal = 'expenseModal';
+      clearCategoryModalAlert();
+      openModal('categoryModal');
+    });
+
+    $('#openCategoryFromBudgetModalBtn')?.addEventListener('click', () => {
+      state.categorySourceModal = 'budgetModal';
+      clearCategoryModalAlert();
+      openModal('categoryModal');
+    });
+
+    function clearCategoryModalAlert() {
+      const alertEl = $('#categoryModalAlert');
+      if (alertEl) {
+        alertEl.className = 'auth-alert';
+        alertEl.textContent = '';
+      }
+    }
+
+    // 4. Form submission
+    const form = $('#modalCategoryForm');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearCategoryModalAlert();
+      const alertEl = $('#categoryModalAlert');
+
+      // Parent Control check: Children cannot create categories
+      if (state.currentUser && String(state.currentUser.role).toUpperCase() === 'CHILD') {
+        if (alertEl) {
+          alertEl.className = 'auth-alert show danger';
+          alertEl.textContent = 'Child accounts are not permitted to create custom categories. Please request your parent to add new spending categories.';
+        }
+        showToast('Child accounts cannot create categories', 'danger');
+        return;
+      }
+
+      const nameInput = $('#categoryNameInput');
+      const name = nameInput ? nameInput.value.trim() : '';
+
+      if (!name) {
+        if (alertEl) {
+          alertEl.className = 'auth-alert show danger';
+          alertEl.textContent = 'Please enter a valid category name.';
+        }
+        nameInput?.focus();
+        return;
+      }
+
+      // Check duplicates locally first
+      if (state.categories.some(c => (c.name || '').trim().toLowerCase() === name.toLowerCase())) {
+        if (alertEl) {
+          alertEl.className = 'auth-alert show danger';
+          alertEl.textContent = `A category named "${escapeHTML(name)}" already exists.`;
+        }
+        nameInput?.focus();
+        return;
+      }
+
+      const type = $('#categoryTypeSelect')?.value || 'EXPENSE';
+      const icon = $('#categoryIconInput')?.value || '🏷️';
+      const color = $('#categoryColorInput')?.value || '#16865c';
+
+      const saveBtn = $('#saveCategoryBtn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving…';
+      }
+
+      try {
+        const created = await api('/api/categories', {
+          method: 'POST',
+          body: JSON.stringify({ name, type, icon, color })
+        });
+
+        closeModal('categoryModal');
+        form.reset();
+
+        // Reload categories across app
+        await loadCategories();
+
+        showToast(`Category "${created.name || name}" created successfully!`, 'success');
+
+        // Context-aware navigation & auto-selection
+        const source = state.categorySourceModal;
+        if (source === 'expenseModal') {
+          openModal('expenseModal');
+          const expSelect = $('#category');
+          if (expSelect) expSelect.value = created.name || name;
+        } else if (source === 'budgetModal') {
+          openModal('budgetModal');
+          const budSelect = $('#modalBudgetCategory');
+          if (budSelect) budSelect.value = created.name || name;
+          $('#modalBudgetLimit')?.focus();
+        } else if (source === 'budgetsPage') {
+          openModal('budgetModal');
+          const budSelect = $('#modalBudgetCategory');
+          if (budSelect) budSelect.value = created.name || name;
+          $('#modalBudgetLimit')?.focus();
+        } else if (source === 'expensesPage') {
+          openModal('expenseModal');
+          const expSelect = $('#category');
+          if (expSelect) expSelect.value = created.name || name;
+        }
+
+        // Refresh parent control summary so new rule is visible
+        if (state.activeSection === 'parent') {
+          loadParentControl();
+        }
+      } catch (err) {
+        console.error('Create category error:', err);
+        if (alertEl) {
+          alertEl.className = 'auth-alert show danger';
+          alertEl.textContent = err.message || 'Failed to create category.';
+        }
+        showToast(err.message || 'Category creation failed', 'danger');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save category';
+        }
+      }
+    });
+  }
+
   // --- DEMO DATA CENTRE MODULE (Phase 5) ---
   function initDemoDataCentre() {
     const form = $('#demoDataForm');
@@ -2074,6 +2357,7 @@
     initDemoDataCentre();
     initSettings();
     initModals();
+    initCustomCategories();
 
     // Verify authentication and kick off app
     checkExistingSession();

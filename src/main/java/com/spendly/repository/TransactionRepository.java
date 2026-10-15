@@ -24,6 +24,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
     boolean existsByFingerprint(String fingerprint);
 
+    boolean existsByCategoryIgnoreCase(String category);
+
     @Query("SELECT t FROM Transaction t WHERE t.transactionDate BETWEEN :startDate AND :endDate ORDER BY t.transactionDate ASC")
     List<Transaction> findForPeriodChronological(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 

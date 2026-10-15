@@ -22,6 +22,14 @@ public class ParentRuleUpdateRequest {
         this.enabled = enabled;
     }
 
+    public Boolean getIsAllowed() {
+        return enabled;
+    }
+
+    public void setIsAllowed(Boolean isAllowed) {
+        this.enabled = isAllowed;
+    }
+
     public BigDecimal getCategoryLimit() {
         return categoryLimit;
     }

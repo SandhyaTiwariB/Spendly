@@ -363,7 +363,10 @@
             <h2>Expenses</h2>
             <p>Track, filter, search, and recategorize every transaction.</p>
           </div>
-          <button class="primary" data-open-modal="expenseModal">+ Add expense</button>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="secondary" id="openCategoryModalFromExpensesBtn" data-open-modal="categoryModal">+ Add category</button>
+            <button class="primary" data-open-modal="expenseModal">+ Add expense</button>
+          </div>
         </div>
 
         <div class="toolbar">
@@ -412,7 +415,10 @@
             <h2>Budgets</h2>
             <p>Set category limits, monitor real spending, and keep your finances on track.</p>
           </div>
-          <button class="primary" data-open-modal="budgetModal">+ Add category budget</button>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button class="secondary" id="openCategoryModalFromBudgetsBtn" data-open-modal="categoryModal">+ Add category</button>
+            <button class="primary" data-open-modal="budgetModal">+ Add category budget</button>
+          </div>
         </div>
 
         <div class="budget-grid" id="budgetsGrid">
@@ -642,6 +648,9 @@
               </label>
             </div>
 
+            <!-- Dynamically populated custom category rules -->
+            <div id="parentCustomRulesContainer"></div>
+
             <div style="margin-top: 22px; padding: 12px; background: #fffaf0; border: 1px solid #fae8be; border-radius: 10px; font-size: 11px; color: #785a12; line-height: 1.5;">
               <strong>Enforcement Note:</strong> Spendly strictly blocks initiated transactions in locked categories. Bank-statement debit transactions that already occurred outside Spendly are flagged for parental review.
             </div>
@@ -776,20 +785,12 @@
           <input id="amount" type="number" min="0.01" step="0.01" placeholder="₹ 450" required />
         </label>
         <label>
-          Category
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span>Category</span>
+            <button type="button" class="btn-link" id="openCategoryFromExpenseModalBtn" style="background: none; border: none; color: var(--green); cursor: pointer; font-size: 12px; font-weight: 600; padding: 0;">+ New category</button>
+          </div>
           <select id="category" required>
-            <option value="Food & Dining">Food & Dining</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Travel & Transport">Travel & Transport</option>
-            <option value="Bills & Utilities">Bills & Utilities</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Groceries">Groceries</option>
-            <option value="Health">Health</option>
-            <option value="Housing">Housing</option>
-            <option value="Gaming / Apps">Gaming / Apps</option>
-            <option value="Transfers">Transfers</option>
-            <option value="Salary & Income">Salary & Income</option>
-            <option value="Other">Other</option>
+            <!-- Populated dynamically -->
           </select>
         </label>
         <label>
@@ -823,18 +824,12 @@
       <p>Configure a monthly ceiling to receive warnings at 80% and alerts at 100%.</p>
       <form id="modalBudgetForm" style="display: grid; gap: 14px;">
         <label>
-          Category
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span>Category</span>
+            <button type="button" class="btn-link" id="openCategoryFromBudgetModalBtn" style="background: none; border: none; color: var(--green); cursor: pointer; font-size: 12px; font-weight: 600; padding: 0;">+ New category</button>
+          </div>
           <select id="modalBudgetCategory" required>
-            <option value="Food & Dining">Food & Dining</option>
-            <option value="Shopping">Shopping</option>
-            <option value="Travel & Transport">Travel & Transport</option>
-            <option value="Bills & Utilities">Bills & Utilities</option>
-            <option value="Entertainment">Entertainment</option>
-            <option value="Groceries">Groceries</option>
-            <option value="Health">Health</option>
-            <option value="Housing">Housing</option>
-            <option value="Education">Education</option>
-            <option value="Other">Other</option>
+            <!-- Populated dynamically -->
           </select>
         </label>
         <label>
@@ -844,6 +839,47 @@
         <div class="modal-actions">
           <button type="button" class="secondary" data-close-modal="budgetModal">Cancel</button>
           <button type="submit" class="primary">Save budget</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOM CATEGORY -->
+  <div class="modal" id="categoryModal">
+    <div class="modal-card">
+      <button class="close" data-close-modal="categoryModal">×</button>
+      <h2>Add custom category</h2>
+      <p>Create a category to use across Expenses, Budgets, and Parent Controls.</p>
+      <div id="categoryModalAlert" class="auth-alert"></div>
+      <form id="modalCategoryForm" style="display: grid; gap: 14px;">
+        <label>
+          Category name
+          <input id="categoryNameInput" placeholder="e.g. Pet Care, Travel - Personal, Fitness" required maxlength="50" autocomplete="off" />
+        </label>
+        <label>
+          Category type
+          <select id="categoryTypeSelect" required>
+            <option value="EXPENSE">Expense (Spending)</option>
+            <option value="INCOME">Income (Earnings)</option>
+          </select>
+        </label>
+        <div>
+          <label style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700; color: var(--ink);">Choose icon</label>
+          <input type="hidden" id="categoryIconInput" value="🏷️" />
+          <div class="icon-picker-grid" id="categoryIconGrid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <div>
+          <label style="margin-bottom: 6px; display: block; font-size: 12px; font-weight: 700; color: var(--ink);">Choose color</label>
+          <input type="hidden" id="categoryColorInput" value="#16865c" />
+          <div class="color-picker-grid" id="categoryColorGrid">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="secondary" data-close-modal="categoryModal">Cancel</button>
+          <button type="submit" class="primary" id="saveCategoryBtn">Save category</button>
         </div>
       </form>
     </div>

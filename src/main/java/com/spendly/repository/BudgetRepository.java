@@ -17,4 +17,6 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
     Optional<Budget> findByCategoryIgnoreCaseAndYearMonth(String category, String yearMonth);
 
     boolean existsByCategoryIgnoreCaseAndYearMonth(String category, String yearMonth);
+
+    boolean existsByCategoryIgnoreCase(String category);
 }

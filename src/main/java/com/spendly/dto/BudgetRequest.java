@@ -22,12 +22,27 @@ public class BudgetRequest {
     public BudgetRequest() {
     }
 
+    public BudgetRequest(String category, BigDecimal monthlyLimit, String yearMonth) {
+        this.category = category;
+        this.monthlyLimit = monthlyLimit;
+        this.limitAmount = monthlyLimit;
+        this.yearMonth = yearMonth;
+    }
+
     public String getCategory() {
         return category;
     }
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getCategoryName() {
+        return category;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.category = categoryName;
     }
 
     public BigDecimal getMonthlyLimit() {
