@@ -1137,7 +1137,7 @@
               ${isCredit ? '+' : '-'}${formatMoney(amount)}
             </div>
             <div style="text-align: right; display: flex; justify-content: flex-end; gap: 6px;">
-              <button class="icon-btn small" title="Delete transaction" onclick="window.spendlyDeleteTransaction(${tx.id})">🗑</button>
+              <button class="icon-btn small danger-text" title="Delete transaction" onclick="window.spendlyDeleteTransaction(${tx.id})">🗑</button>
             </div>
           </div>
         `;
@@ -1211,7 +1211,7 @@
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 ${badgeHtml}
-                <button class="icon-btn small" title="Delete budget" onclick="window.spendlyDeleteBudget(${b.id})">×</button>
+                <button class="icon-btn small danger-text" title="Delete budget" onclick="window.spendlyDeleteBudget(${b.id})">🗑</button>
               </div>
             </div>
 
@@ -1307,7 +1307,10 @@
                 <strong style="font-size: 16px; color: var(--green);">${escapeHTML(bill.title)}</strong>
                 <small class="muted" style="display: block; font-size: 11px;">Created ${formatDate(bill.createdAt || bill.date)}</small>
               </div>
-              <strong style="font-size: 17px; font-family: 'Playfair Display', Georgia, serif;">${formatMoney(total)}</strong>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <strong style="font-size: 17px; font-family: 'Playfair Display', Georgia, serif;">${formatMoney(total)}</strong>
+                <button class="icon-btn small danger-text" title="Delete split bill group" onclick="window.spendlyDeleteSplitBill(${bill.id})">🗑</button>
+              </div>
             </div>
 
             <div style="display: grid; gap: 8px;">
@@ -1349,6 +1352,18 @@
       loadDashboard();
     } catch (err) {
       showToast(err.message || 'Failed to settle participant share', 'danger');
+    }
+  };
+
+  window.spendlyDeleteSplitBill = async function (billId) {
+    if (!confirm('Are you sure you want to delete this split bill group?')) return;
+    try {
+      await api(`/api/split-bills/${billId}`, { method: 'DELETE' });
+      showToast('Split bill group deleted successfully', 'success');
+      loadSplitBills();
+      loadDashboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to delete split bill group', 'danger');
     }
   };
 
@@ -1415,13 +1430,14 @@
                 ${isSettled ? 'Settled ✓' : 'Active'}
               </span>
             </div>
-            <div style="text-align: right; display: flex; justify-content: flex-end; gap: 6px;">
+            <div style="text-align: right; display: flex; justify-content: flex-end; align-items: center; gap: 6px;">
               ${!isSettled ? `
                 <button class="secondary small" onclick="window.spendlyOpenRepaymentModal(${ob.id}, ${remaining})">Repay</button>
                 <button class="secondary small" onclick="window.spendlySettleObligation(${ob.id})">Settle</button>
               ` : `
-                <span class="muted" style="font-size: 11px;">Complete</span>
+                <span class="muted" style="font-size: 11px; margin-right: 4px;">Complete</span>
               `}
+              <button class="icon-btn small danger-text" title="Delete record" onclick="window.spendlyDeleteObligation(${ob.id})">🗑</button>
             </div>
           </div>
         `;
@@ -1456,6 +1472,18 @@
       loadDashboard();
     } catch (err) {
       showToast(err.message || 'Failed to settle obligation', 'danger');
+    }
+  };
+
+  window.spendlyDeleteObligation = async function (id) {
+    if (!confirm('Are you sure you want to delete this lending/borrowing record?')) return;
+    try {
+      await api(`/api/obligations/${id}`, { method: 'DELETE' });
+      showToast('Record deleted successfully', 'success');
+      loadLending();
+      loadDashboard();
+    } catch (err) {
+      showToast(err.message || 'Failed to delete record', 'danger');
     }
   };
 
@@ -2211,6 +2239,9 @@
           filterCatSelect.value = currentVal;
         }
       }
+
+      // 4. Populate Custom Categories management list inside categoryModal (#customCategoriesList)
+      renderCustomCategoriesList();
     } catch (err) {
       console.warn('Could not load categories:', err);
     }
@@ -2388,6 +2419,49 @@
       }
     });
   }
+
+  function renderCustomCategoriesList() {
+    const listEl = $('#customCategoriesList');
+    if (!listEl) return;
+
+    const customCats = state.categories.filter(c => c.isCustom || c.custom);
+    if (customCats.length === 0) {
+      listEl.innerHTML = `<p class="muted" style="font-size: 11px; margin: 4px 0; text-align: center; padding: 10px; background: #fafaf7; border-radius: 8px;">No custom categories added yet.</p>`;
+      return;
+    }
+
+    listEl.innerHTML = customCats.map(c => `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #fafaf7; border-radius: 8px; font-size: 12px; border: 1px solid var(--line);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 16px;">${c.icon || '🏷️'}</span>
+          <strong style="color: var(--ink);">${escapeHTML(c.name)}</strong>
+          <span class="badge ${c.type === 'INCOME' ? 'success' : 'neutral'}" style="font-size: 9px; padding: 2px 6px;">${c.type || 'EXPENSE'}</span>
+        </div>
+        <button class="icon-btn small danger-text" title="Delete category" onclick="window.spendlyDeleteCategory(${c.id}, '${escapeHTML(c.name).replace(/'/g, "\\'")}')">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  window.spendlyDeleteCategory = async function (id, name) {
+    if (state.currentUser && String(state.currentUser.role).toUpperCase() === 'CHILD') {
+      showToast('Child accounts are not permitted to delete categories', 'danger');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete custom category "${name}"?`)) return;
+
+    try {
+      await api(`/api/categories/${id}`, { method: 'DELETE' });
+      showToast(`Category "${name}" deleted successfully`, 'success');
+      await loadCategories();
+      if (state.activeSection === 'expenses') loadExpenses();
+      if (state.activeSection === 'budgets') loadBudgets();
+      if (state.activeSection === 'dashboard') loadDashboard();
+      if (state.activeSection === 'parent') loadParentControl();
+    } catch (err) {
+      showToast(err.message || 'Cannot delete category (it may be used by transactions or budgets)', 'danger');
+    }
+  };
 
   // --- DEMO DATA CENTRE MODULE (Phase 5) ---
   function initDemoDataCentre() {

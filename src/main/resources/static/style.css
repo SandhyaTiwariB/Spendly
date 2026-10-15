@@ -268,6 +268,32 @@ button {
   border-color: #d1d9d4;
 }
 
+.icon-btn.small {
+  height: 28px;
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.icon-btn.danger-text {
+  color: var(--danger);
+  border-color: rgba(224, 79, 95, 0.28);
+  background: rgba(224, 79, 95, 0.05);
+}
+
+.icon-btn.danger-text:hover {
+  background: #fee2e2;
+  border-color: var(--danger);
+  color: #991b1b;
+  transform: scale(1.05);
+}
+
 .notif-badge {
   position: absolute;
   top: 5px;
