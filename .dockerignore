@@ -1,0 +1,15 @@
+target/
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+data/
+maven/
+sample_statements/
+backup_original/
+downloaded_*
+*.log
+*.ps1
+README.md
+

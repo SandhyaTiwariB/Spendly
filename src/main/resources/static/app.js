@@ -8,7 +8,10 @@
 
   // --- API BASE URL CONFIGURATION ---
   const API_BASE = window.SPENDLY_API_BASE || (
-    (typeof window !== 'undefined' && (window.location.protocol === 'file:' || (window.location.port && window.location.port !== '8080')))
+    (typeof window !== 'undefined' && (
+      window.location.protocol === 'file:' ||
+      ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port && window.location.port !== '8080')
+    ))
       ? 'http://localhost:8080'
       : ''
   );

@@ -1,12 +1,13 @@
 services:
   - type: web
     name: spendly
-    env: docker
+    runtime: docker
     plan: free
     region: oregon
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: h2
       - key: PORT
-        value: 8080
+        value: 10000
