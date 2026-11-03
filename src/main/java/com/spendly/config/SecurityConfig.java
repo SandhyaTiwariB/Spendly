@@ -37,6 +37,13 @@ public class SecurityConfig {
                     "/assets/**",
                     "/api/auth/**",
                     "/api/health",
+                    "/api/health/**",
+                    "/health",
+                    "/health/**",
+                    "/healthz",
+                    "/healthz/**",
+                    "/ping",
+                    "/ping/**",
                     "/actuator/**",
                     "/h2-console/**"
                 ).permitAll()
